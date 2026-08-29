@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: druks
+          POSTGRES_PASSWORD: druks
+          POSTGRES_DB: druks_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U druks"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DRUKS_TEST_DATABASE_URL: postgresql+psycopg://druks:druks@127.0.0.1:5432/druks_test
+      DRUKS_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.11
+      # The current supported Druks, from the same pin the package declares.
+      - run: uv sync --all-extras --dev
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      # The live contract: the app loads from its entry point, its pages make a
+      # route table, and a parked run puts the gate in the followed region.
+      - run: uv run pytest
