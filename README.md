@@ -42,6 +42,24 @@ The same page shows the other page shapes: a landing page with navigation, a
 static child that renders as a tab, and a parameterized detail page with the
 link back to the page it hangs under.
 
+## See the whole catalog
+
+**blocks** holds one of everything the contract carries, in four tabs:
+
+| Tab | What it shows |
+| --- | --- |
+| Display and layout | Text, Markdown, sections, cards, every callout tone, dividers, empty states, links |
+| Data | Metrics, Facts, two charts, a long table and the same table empty, a list, and every value |
+| Runs and artifacts | Timeline, all three shapes of Progress, images, a gallery, files, a link to the platform's own story |
+| Layout | Stack and Columns, nested |
+| Forms and actions | Every field, and buttons that confirm, refresh a region, navigate, fail, and fail validation |
+
+Every one of those pages ends with the Python that produced it. Every button
+calls a real route, so the failure states are real failures.
+
+A test fails when a block, value, or field in the contract has no example here.
+The gallery is the reference, so an empty spot in it is a gap in the reference.
+
 ## Work on it
 
 ```bash
@@ -56,5 +74,10 @@ uses.
 
 ## Supported Druks
 
-This gallery tracks Druks `>=0.4.0` and the V1 UI contract in
-[docs/druks-ui.md](https://github.com/czpython/druks/blob/main/docs/druks-ui.md).
+This gallery tracks Druks `>=0.4.0` from `main`, until the release that carries
+the V1 UI contract.
+
+- The contract this app consumes:
+  [docs/druks-ui.md](https://github.com/czpython/druks/blob/main/docs/druks-ui.md)
+- How to write an app of your own:
+  [docs/writing-an-app.md](https://github.com/czpython/druks/blob/main/docs/writing-an-app.md)

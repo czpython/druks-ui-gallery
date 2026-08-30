@@ -29,8 +29,8 @@ def test_the_app_loads_from_its_entry_point():
 def test_the_pages_make_a_route_table():
     app = installed()
 
-    assert [page.name for page in app.pages()] == ["overview", "about", "examples", "example"]
-    assert [page.label for page in app.navigation_pages()] == ["overview", "examples"]
+    assert {page.name for page in app.pages()} >= {"overview", "about", "examples", "example"}
+    assert [page.label for page in app.navigation_pages()] == ["overview", "examples", "blocks"]
     # A static child is a tab; a parameterized one is a detail page.
     pages = {page.name: page for page in app.pages()}
     assert pages["about"].parent is pages["overview"]
@@ -43,16 +43,20 @@ def test_every_action_names_an_operation_the_app_declares():
 
     operations = app.operations()
 
-    assert set(operations) == {"run_example", "stop_example"}
-    assert operations["run_example"]["method"] == "POST"
+    assert set(operations) >= {"run_example", "stop_example"}
+    assert operations["run_example"].method == "POST"
 
 
 async def test_the_landing_page_links_to_the_example(druks_db):
     page = await overview.function()
 
-    card = page.blocks[-1]
-    assert card.actions[0].page == "example"
-    assert card.actions[0].arguments == {"example_id": "gate"}
+    (opening,) = [
+        action
+        for block in page.blocks
+        for action in getattr(block, "actions", [])
+        if action.page == "example"
+    ]
+    assert opening.arguments == {"example_id": "gate"}
 
 
 async def test_the_example_page_offers_a_run_when_nothing_waits(druks_db):
