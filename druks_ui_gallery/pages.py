@@ -9,16 +9,6 @@ WORKING = {
     "running": "The run is working. It stops at the gate in a moment.",
 }
 
-# How a run's state reads on this gallery's pages.
-TONES = {
-    "scheduled": "neutral",
-    "running": "active",
-    "parked": "warning",
-    "finished": "success",
-    "failed": "danger",
-    "cancelled": "neutral",
-}
-
 
 @ui.page("/")
 async def overview():
@@ -169,17 +159,6 @@ async def example(example_id: str):
                 blocks=decision,
             ),
             ui.Divider(),
-            ui.Timeline(
-                [
-                    ui.TimelineItem(
-                        when=run.created_at,
-                        title=run.label,
-                        description=run.failure or "",
-                        status=ui.StatusValue(run.state, tone=TONES.get(run.state, "neutral")),
-                    )
-                    for run in await found.get_timeline()
-                ],
-                title="Runs",
-            ),
+            ui.Link("Everything druks did about this example", subject=found),
         ],
     )
