@@ -1,0 +1,41 @@
+[project]
+name = "druks-ui-gallery"
+version = "0.1.0"
+description = "The visual and compatibility reference for Druks UI."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = ["druks>=0.4.0"]
+
+# Druks UI is not on PyPI yet, so this gallery takes Druks from the branch that
+# carries the contract it consumes. When the release lands, raise the
+# requirement above to that version and delete this block.
+[tool.uv.sources]
+druks = { git = "https://github.com/czpython/druks", branch = "main" }
+
+# Installing the distribution is the whole registration: Druks reads this at
+# boot and mounts the app.
+[project.entry-points."druks.apps"]
+druks_ui_gallery = "druks_ui_gallery.app:DruksUiGallery"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.9"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["SIM108"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["druks_ui_gallery"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
