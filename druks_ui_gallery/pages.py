@@ -33,7 +33,7 @@ async def overview():
                                 "controls go away."
                             )
                         ],
-                        actions=[
+                        controls=[
                             ui.Link(
                                 "Open the live gate",
                                 page="example",
@@ -45,13 +45,13 @@ async def overview():
                         title="Browse working examples",
                         description="Small, complete flows that run for real.",
                         blocks=[ui.Text("Use these to learn how pages and actions fit together.")],
-                        actions=[ui.Link("Open examples", page="examples")],
+                        controls=[ui.Link("Open examples", page="examples")],
                     ),
                     ui.Card(
                         title="Inspect the full catalog",
                         description="Every block, value, field, and public variant.",
                         blocks=[ui.Text("Each page ends with the Python that produced it.")],
-                        actions=[ui.Link("Open the catalog", page="blocks")],
+                        controls=[ui.Link("Open the catalog", page="blocks")],
                     ),
                 ],
             ),
@@ -136,26 +136,30 @@ async def example(example_id: str):
 
     if status.gate:
         decision = [ui.GateControls(status.run)]
-        decision_action = None
+        decision_controls = []
     elif status.run and status.state in WORKING:
         decision = [ui.Text(WORKING[status.state])]
-        decision_action = ui.Action(
-            label="Stop it",
-            operation="stop_example",
-            arguments={"example_id": example_id},
-            tone="danger",
-            confirm="Stop this run?",
-            refresh="region",
-        )
+        decision_controls = [
+            ui.Action(
+                label="Stop it",
+                operation="stop_example",
+                arguments={"example_id": example_id},
+                tone="danger",
+                confirm="Stop this run?",
+                refresh="region",
+            )
+        ]
     else:
         decision = [ui.Text("Nothing is waiting on you. Start a run and it will stop here.")]
-        decision_action = ui.Action(
-            label="Run the example",
-            operation="run_example",
-            arguments={"example_id": example_id},
-            tone="primary",
-            refresh="region",
-        )
+        decision_controls = [
+            ui.Action(
+                label="Run the example",
+                operation="run_example",
+                arguments={"example_id": example_id},
+                tone="primary",
+                refresh="region",
+            )
+        ]
 
     return ui.Page(
         EXAMPLES[example_id],
@@ -167,7 +171,7 @@ async def example(example_id: str):
                 # The whole trick: this region watches the showcase, so every
                 # change to its run rereads the page and replaces the region.
                 follows=found,
-                action=decision_action,
+                controls=decision_controls,
                 blocks=decision,
             ),
             ui.Divider(),

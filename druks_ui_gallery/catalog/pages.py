@@ -40,7 +40,7 @@ async def blocks():
                         title="rack-1",
                         description="Last answered 4 minutes ago.",
                         blocks=[ui.Text("A card holds blocks and offers links.")],
-                        actions=[ui.Link("Its runs", page="runs")],
+                        controls=[ui.Link("Its runs", page="runs")],
                     ),
                 ],
             ),
@@ -51,7 +51,7 @@ async def blocks():
             ui.EmptyState(
                 "No peers yet",
                 description="An empty state stands in for content there is none of.",
-                actions=[ui.Link("Read the contract", url="https://docs.druks.ai")],
+                controls=[ui.Link("Read the contract", url="https://docs.druks.ai")],
             ),
             ui.Link("A link to another page", page="data"),
             declaration(blocks),
@@ -288,18 +288,20 @@ async def forms():
     return ui.Page(
         "Forms and actions",
         description="Each button here calls a real route.",
-        action=ui.Action(
-            label="Try the validation error",
-            operation="needs_a_peer",
-            refresh="none",
-            fields=[
-                ui.TextField(
-                    name="peer",
-                    label="Peer",
-                    help_text="Leave it empty and the error lands here.",
-                )
-            ],
-        ),
+        controls=[
+            ui.Action(
+                label="Try the validation error",
+                operation="needs_a_peer",
+                refresh="none",
+                fields=[
+                    ui.TextField(
+                        name="peer",
+                        label="Peer",
+                        help_text="Leave it empty and the error lands here.",
+                    )
+                ],
+            )
+        ],
         blocks=[
             ui.Form(
                 action=ui.Action(label="Submit", operation="accept_anything", tone="primary"),
@@ -337,17 +339,19 @@ async def forms():
             ui.Section(
                 title="What an action does next",
                 name="results",
-                action=ui.Action(
-                    label="Refresh this section",
-                    operation="accept_anything",
-                    refresh="region",
-                ),
+                controls=[
+                    ui.Action(
+                        label="Refresh this section",
+                        operation="accept_anything",
+                        refresh="region",
+                    )
+                ],
                 blocks=[
                     ui.Text("Every button below calls a route and shows you the answer."),
                     ui.Card(
                         title="Confirmation and a destructive tone",
                         blocks=[ui.Text("It asks before it sends anything.")],
-                        actions=[
+                        controls=[
                             ui.Action(
                                 label="Delete the sweep",
                                 operation="accept_anything",
@@ -360,14 +364,14 @@ async def forms():
                     ui.Card(
                         title="A failure",
                         blocks=[ui.Text("The route refuses, and the page says so.")],
-                        actions=[
+                        controls=[
                             ui.Action(label="Call the broken route", operation="always_fails")
                         ],
                     ),
                     ui.Card(
                         title="Refresh, and navigation",
                         blocks=[ui.Text("One rereads this region; the other leaves the page.")],
-                        actions=[
+                        controls=[
                             ui.Action(
                                 label="Go to the overview",
                                 operation="accept_anything",
