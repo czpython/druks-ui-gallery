@@ -342,17 +342,12 @@ async def forms():
                     ),
                     ui.Card(
                         title="A validation error",
-                        blocks=[
-                            ui.Text("Submit this empty. The route requires a peer."),
-                            ui.Form(
-                                title="Try the validation error",
-                                description="The form opens only when you need it.",
-                                presentation="dialog",
-                                action=ui.Action(
-                                    label="Submit",
-                                    operation="needs_a_peer",
-                                    refresh="none",
-                                ),
+                        blocks=[ui.Text("Submit this empty. The route requires a peer.")],
+                        actions=[
+                            ui.Action(
+                                label="Try the validation error",
+                                operation="needs_a_peer",
+                                refresh="none",
                                 fields=[
                                     ui.TextField(
                                         name="peer",
@@ -360,7 +355,7 @@ async def forms():
                                         help_text="Leave it empty and the error lands here.",
                                     )
                                 ],
-                            ),
+                            )
                         ],
                     ),
                     ui.Card(

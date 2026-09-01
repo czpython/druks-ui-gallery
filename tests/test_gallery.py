@@ -1,8 +1,11 @@
+from datetime import UTC, datetime
 from importlib.metadata import entry_points
 
 import pytest
+from druks.testing import seed_run
 
 from druks_ui_gallery.app import DruksUiGallery
+from druks_ui_gallery.catalog.pages import forms
 from druks_ui_gallery.pages import example, overview
 from druks_ui_gallery.workflows import EXAMPLES, Example, RunTheGate
 
@@ -57,6 +60,25 @@ async def test_the_landing_page_links_to_the_example(druks_db):
     assert opening.arguments == {"example_id": "gate"}
 
 
+async def test_the_forms_catalog_shows_inline_and_action_field_collection():
+    page = await forms.function()
+
+    (inline,) = [block for block in page.blocks if block.block == "form"]
+    (results,) = [
+        block for block in page.blocks if block.block == "section" and block.name == "results"
+    ]
+    (validation,) = [
+        block
+        for block in results.blocks
+        if block.block == "card" and block.title == "A validation error"
+    ]
+    (field_action,) = validation.actions
+
+    assert inline.title == "Every field"
+    assert field_action.label == "Try the validation error"
+    assert [field.name for field in field_action.fields] == ["peer"]
+
+
 async def test_the_example_page_offers_a_run_when_nothing_waits(druks_db):
     page = await example.function("gate")
 
@@ -68,8 +90,6 @@ async def test_the_example_page_offers_a_run_when_nothing_waits(druks_db):
 
 
 async def test_a_queued_run_reads_as_queued_and_can_be_stopped(druks_db):
-    from druks.testing import seed_run
-
     await seed_run(druks_db, kind=RunTheGate.kind, subject=Example(id="gate"), state="scheduled")
 
     page = await example.function("gate")
@@ -100,10 +120,6 @@ async def test_the_showcase_is_identity_alone():
 
 @pytest.fixture
 async def parked_run(druks_db):
-    from datetime import UTC, datetime
-
-    from druks.testing import seed_run
-
     run = await seed_run(
         druks_db,
         kind=RunTheGate.kind,
