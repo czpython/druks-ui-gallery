@@ -24,6 +24,7 @@ async def blocks():
         description="Text, sections, cards, callouts, dividers, empty states, and links.",
         blocks=[
             ui.Text("A paragraph the app wrote."),
+            ui.Quote("Words from a person or an external system stay exactly as written."),
             ui.Markdown(
                 "Markdown carries **emphasis**, `code`, and lists:\n\n"
                 "- the shell renders it\n"
@@ -85,7 +86,18 @@ async def data():
                         description="Peers that replied to this sweep.",
                     ),
                     ui.Metric("State", value=RUNNING),
-                ]
+                ],
+                title="Operational summary",
+            ),
+            ui.Metrics(
+                [
+                    ui.Metric("Neutral", value=ui.NumberValue(8)),
+                    ui.Metric("Active", value=ui.NumberValue(4, tone="active")),
+                    ui.Metric("Success", value=ui.NumberValue(17, tone="success")),
+                    ui.Metric("Warning", value=ui.NumberValue(2, tone="warning")),
+                    ui.Metric("Danger", value=ui.NumberValue(1, tone="danger")),
+                ],
+                title="Number tones",
             ),
             ui.Facts(
                 [
@@ -296,6 +308,17 @@ async def forms():
                     ui.MultiSelectField(name="tags", label="Tags", options=SEVERITY),
                     ui.RadioField(name="decision", label="Decision", options=SEVERITY),
                     ui.CheckboxField(name="notify", label="Notify the owner"),
+                    ui.UploadField(
+                        name="evidence",
+                        label="Evidence",
+                        help_text="One file stored by the platform.",
+                        accept="image/*,.pdf",
+                    ),
+                    ui.SecretField(
+                        name="token",
+                        label="Access token",
+                        help_text="A secret has no value that a page can read back.",
+                    ),
                 ],
             ),
             ui.Divider(),
@@ -322,6 +345,9 @@ async def forms():
                         blocks=[
                             ui.Text("Submit this empty. The route requires a peer."),
                             ui.Form(
+                                title="Try the validation error",
+                                description="The form opens only when you need it.",
+                                presentation="dialog",
                                 action=ui.Action(
                                     label="Submit",
                                     operation="needs_a_peer",

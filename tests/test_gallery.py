@@ -50,11 +50,9 @@ def test_every_action_names_an_operation_the_app_declares():
 async def test_the_landing_page_links_to_the_example(druks_db):
     page = await overview.function()
 
+    (destinations,) = [block for block in page.blocks if block.block == "cards"]
     (opening,) = [
-        action
-        for block in page.blocks
-        for action in getattr(block, "actions", [])
-        if action.page == "example"
+        action for card in destinations.cards for action in card.actions if action.page == "example"
     ]
     assert opening.arguments == {"example_id": "gate"}
 
