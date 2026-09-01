@@ -67,16 +67,14 @@ async def test_the_forms_catalog_shows_inline_and_action_field_collection():
     (results,) = [
         block for block in page.blocks if block.block == "section" and block.name == "results"
     ]
-    (validation,) = [
-        block
-        for block in results.blocks
-        if block.block == "card" and block.title == "A validation error"
-    ]
-    (field_action,) = validation.actions
+    field_action = page.action
 
     assert inline.title == "Every field"
+    assert field_action
     assert field_action.label == "Try the validation error"
     assert [field.name for field in field_action.fields] == ["peer"]
+    assert results.action
+    assert results.action.refresh == "region"
 
 
 async def test_the_example_page_offers_a_run_when_nothing_waits(druks_db):
@@ -86,7 +84,7 @@ async def test_the_example_page_offers_a_run_when_nothing_waits(druks_db):
     assert region.name == "decision"
     assert region.follows.subject_type == "example"
     assert region.follows.subject_id == "gate"
-    assert region.blocks[-1].operation == "run_example"
+    assert region.action.operation == "run_example"
 
 
 async def test_a_queued_run_reads_as_queued_and_can_be_stopped(druks_db):
@@ -96,7 +94,7 @@ async def test_a_queued_run_reads_as_queued_and_can_be_stopped(druks_db):
 
     region = page.blocks[0]
     assert "queued" in region.blocks[0].text
-    assert region.blocks[1].operation == "stop_example"
+    assert region.action.operation == "stop_example"
 
 
 async def test_a_parked_run_puts_the_gate_in_the_followed_region(druks_db, parked_run):

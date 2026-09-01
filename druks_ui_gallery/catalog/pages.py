@@ -288,6 +288,18 @@ async def forms():
     return ui.Page(
         "Forms and actions",
         description="Each button here calls a real route.",
+        action=ui.Action(
+            label="Try the validation error",
+            operation="needs_a_peer",
+            refresh="none",
+            fields=[
+                ui.TextField(
+                    name="peer",
+                    label="Peer",
+                    help_text="Leave it empty and the error lands here.",
+                )
+            ],
+        ),
         blocks=[
             ui.Form(
                 action=ui.Action(label="Submit", operation="accept_anything", tone="primary"),
@@ -325,6 +337,11 @@ async def forms():
             ui.Section(
                 title="What an action does next",
                 name="results",
+                action=ui.Action(
+                    label="Refresh this section",
+                    operation="accept_anything",
+                    refresh="region",
+                ),
                 blocks=[
                     ui.Text("Every button below calls a route and shows you the answer."),
                     ui.Card(
@@ -341,24 +358,6 @@ async def forms():
                         ],
                     ),
                     ui.Card(
-                        title="A validation error",
-                        blocks=[ui.Text("Submit this empty. The route requires a peer.")],
-                        actions=[
-                            ui.Action(
-                                label="Try the validation error",
-                                operation="needs_a_peer",
-                                refresh="none",
-                                fields=[
-                                    ui.TextField(
-                                        name="peer",
-                                        label="Peer",
-                                        help_text="Leave it empty and the error lands here.",
-                                    )
-                                ],
-                            )
-                        ],
-                    ),
-                    ui.Card(
                         title="A failure",
                         blocks=[ui.Text("The route refuses, and the page says so.")],
                         actions=[
@@ -369,11 +368,6 @@ async def forms():
                         title="Refresh, and navigation",
                         blocks=[ui.Text("One rereads this region; the other leaves the page.")],
                         actions=[
-                            ui.Action(
-                                label="Refresh this region",
-                                operation="accept_anything",
-                                refresh="region",
-                            ),
                             ui.Action(
                                 label="Go to the overview",
                                 operation="accept_anything",

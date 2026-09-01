@@ -136,29 +136,26 @@ async def example(example_id: str):
 
     if status.gate:
         decision = [ui.GateControls(status.run)]
+        decision_action = None
     elif status.run and status.state in WORKING:
-        decision = [
-            ui.Text(WORKING[status.state]),
-            ui.Action(
-                label="Stop it",
-                operation="stop_example",
-                arguments={"example_id": example_id},
-                tone="danger",
-                confirm="Stop this run?",
-                refresh="region",
-            ),
-        ]
+        decision = [ui.Text(WORKING[status.state])]
+        decision_action = ui.Action(
+            label="Stop it",
+            operation="stop_example",
+            arguments={"example_id": example_id},
+            tone="danger",
+            confirm="Stop this run?",
+            refresh="region",
+        )
     else:
-        decision = [
-            ui.Text("Nothing is waiting on you. Start a run and it will stop here."),
-            ui.Action(
-                label="Run the example",
-                operation="run_example",
-                arguments={"example_id": example_id},
-                tone="primary",
-                refresh="region",
-            ),
-        ]
+        decision = [ui.Text("Nothing is waiting on you. Start a run and it will stop here.")]
+        decision_action = ui.Action(
+            label="Run the example",
+            operation="run_example",
+            arguments={"example_id": example_id},
+            tone="primary",
+            refresh="region",
+        )
 
     return ui.Page(
         EXAMPLES[example_id],
@@ -170,6 +167,7 @@ async def example(example_id: str):
                 # The whole trick: this region watches the showcase, so every
                 # change to its run rereads the page and replaces the region.
                 follows=found,
+                action=decision_action,
                 blocks=decision,
             ),
             ui.Divider(),
