@@ -1,10 +1,13 @@
+from datetime import UTC, datetime
 from importlib.metadata import entry_points
 from typing import Literal, get_args, get_origin
 
 import pytest
+from druks.testing import seed_run
 from druks.ui import Block, Field, Value
 from pydantic import BaseModel
 
+from druks_ui_gallery.catalog.pages import data, forms
 from druks_ui_gallery.catalog.source import HEADING
 from druks_ui_gallery.pages import example
 from druks_ui_gallery.workflows import Example, RunTheGate
@@ -131,10 +134,6 @@ async def rendered(druks_db) -> list[dict]:
 
 @pytest.fixture
 async def parked(druks_db):
-    from datetime import UTC, datetime
-
-    from druks.testing import seed_run
-
     run = await seed_run(
         druks_db,
         kind=RunTheGate.kind,
@@ -207,8 +206,6 @@ async def test_every_catalog_page_shows_its_own_declaration(druks_db):
 
 
 async def test_an_action_can_be_confirmed_refreshed_and_navigated(druks_db):
-    from druks_ui_gallery.catalog.pages import forms
-
     page = await forms.function()
 
     shown = actions_in(page.model_dump(by_alias=True, mode="json"))
@@ -217,20 +214,13 @@ async def test_an_action_can_be_confirmed_refreshed_and_navigated(druks_db):
     assert any(action["refresh"] == "region" for action in shown), "no region refresh"
     assert any(action["link"] for action in shown), "no action navigates"
     assert any(action["operation"] == "always_fails" for action in shown), "no failure to see"
-    # The validation error has to reach a field, so its action submits a form
-    # whose field the route names back.
-    forms_shown = [
-        one
-        for one in every(page.model_dump(by_alias=True, mode="json"))
-        if one.get("block") == "form"
-    ]
-    (validating,) = [one for one in forms_shown if one["action"]["operation"] == "needs_a_peer"]
+    # The validation error has to reach a field, so the action collects the
+    # field that the route names back.
+    (validating,) = [one for one in shown if one["operation"] == "needs_a_peer"]
     assert [field["name"] for field in validating["fields"]] == ["peer"]
 
 
 async def test_a_table_shows_both_its_states(druks_db):
-    from druks_ui_gallery.catalog.pages import data
-
     page = (await data.function()).model_dump(by_alias=True, mode="json")
 
     tables = [one for one in every(page) if one.get("block") == "table"]

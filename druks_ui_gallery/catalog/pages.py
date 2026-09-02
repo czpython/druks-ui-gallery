@@ -24,6 +24,7 @@ async def blocks():
         description="Text, sections, cards, callouts, dividers, empty states, and links.",
         blocks=[
             ui.Text("A paragraph the app wrote."),
+            ui.Quote("Words from a person or an external system stay exactly as written."),
             ui.Markdown(
                 "Markdown carries **emphasis**, `code`, and lists:\n\n"
                 "- the shell renders it\n"
@@ -39,7 +40,7 @@ async def blocks():
                         title="rack-1",
                         description="Last answered 4 minutes ago.",
                         blocks=[ui.Text("A card holds blocks and offers links.")],
-                        actions=[ui.Link("Its runs", page="runs")],
+                        controls=[ui.Link("Its runs", page="runs")],
                     ),
                 ],
             ),
@@ -50,7 +51,7 @@ async def blocks():
             ui.EmptyState(
                 "No peers yet",
                 description="An empty state stands in for content there is none of.",
-                actions=[ui.Link("Read the contract", url="https://docs.druks.ai")],
+                controls=[ui.Link("Read the contract", url="https://docs.druks.ai")],
             ),
             ui.Link("A link to another page", page="data"),
             declaration(blocks),
@@ -85,7 +86,18 @@ async def data():
                         description="Peers that replied to this sweep.",
                     ),
                     ui.Metric("State", value=RUNNING),
-                ]
+                ],
+                title="Operational summary",
+            ),
+            ui.Metrics(
+                [
+                    ui.Metric("Neutral", value=ui.NumberValue(8)),
+                    ui.Metric("Active", value=ui.NumberValue(4, tone="active")),
+                    ui.Metric("Success", value=ui.NumberValue(17, tone="success")),
+                    ui.Metric("Warning", value=ui.NumberValue(2, tone="warning")),
+                    ui.Metric("Danger", value=ui.NumberValue(1, tone="danger")),
+                ],
+                title="Number tones",
             ),
             ui.Facts(
                 [
@@ -276,6 +288,20 @@ async def forms():
     return ui.Page(
         "Forms and actions",
         description="Each button here calls a real route.",
+        controls=[
+            ui.Action(
+                label="Try the validation error",
+                operation="needs_a_peer",
+                refresh="none",
+                fields=[
+                    ui.TextField(
+                        name="peer",
+                        label="Peer",
+                        help_text="Leave it empty and the error lands here.",
+                    )
+                ],
+            )
+        ],
         blocks=[
             ui.Form(
                 action=ui.Action(label="Submit", operation="accept_anything", tone="primary"),
@@ -296,18 +322,36 @@ async def forms():
                     ui.MultiSelectField(name="tags", label="Tags", options=SEVERITY),
                     ui.RadioField(name="decision", label="Decision", options=SEVERITY),
                     ui.CheckboxField(name="notify", label="Notify the owner"),
+                    ui.UploadField(
+                        name="evidence",
+                        label="Evidence",
+                        help_text="One file stored by the platform.",
+                        accept="image/*,.pdf",
+                    ),
+                    ui.SecretField(
+                        name="token",
+                        label="Access token",
+                        help_text="A secret has no value that a page can read back.",
+                    ),
                 ],
             ),
             ui.Divider(),
             ui.Section(
                 title="What an action does next",
                 name="results",
+                controls=[
+                    ui.Action(
+                        label="Refresh this section",
+                        operation="accept_anything",
+                        refresh="region",
+                    )
+                ],
                 blocks=[
                     ui.Text("Every button below calls a route and shows you the answer."),
                     ui.Card(
                         title="Confirmation and a destructive tone",
                         blocks=[ui.Text("It asks before it sends anything.")],
-                        actions=[
+                        controls=[
                             ui.Action(
                                 label="Delete the sweep",
                                 operation="accept_anything",
@@ -318,41 +362,16 @@ async def forms():
                         ],
                     ),
                     ui.Card(
-                        title="A validation error",
-                        blocks=[
-                            ui.Text("Submit this empty. The route requires a peer."),
-                            ui.Form(
-                                action=ui.Action(
-                                    label="Submit",
-                                    operation="needs_a_peer",
-                                    refresh="none",
-                                ),
-                                fields=[
-                                    ui.TextField(
-                                        name="peer",
-                                        label="Peer",
-                                        help_text="Leave it empty and the error lands here.",
-                                    )
-                                ],
-                            ),
-                        ],
-                    ),
-                    ui.Card(
                         title="A failure",
                         blocks=[ui.Text("The route refuses, and the page says so.")],
-                        actions=[
+                        controls=[
                             ui.Action(label="Call the broken route", operation="always_fails")
                         ],
                     ),
                     ui.Card(
                         title="Refresh, and navigation",
                         blocks=[ui.Text("One rereads this region; the other leaves the page.")],
-                        actions=[
-                            ui.Action(
-                                label="Refresh this region",
-                                operation="accept_anything",
-                                refresh="region",
-                            ),
+                        controls=[
                             ui.Action(
                                 label="Go to the overview",
                                 operation="accept_anything",

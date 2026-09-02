@@ -52,7 +52,7 @@ link back to the page it hangs under.
 | Data | Metrics, Facts, two charts, a long table and the same table empty, a list, and every value |
 | Runs and artifacts | Timeline, all three shapes of Progress, images, a gallery, files, a link to the platform's own story |
 | Layout | Stack and Columns, nested |
-| Forms and actions | Every field, and buttons that confirm, refresh a region, navigate, fail, and fail validation |
+| Forms and actions | Every field, page and section controls, confirmation, refresh, navigation, and errors |
 
 Every one of those pages ends with the Python that produced it. Every button
 calls a real route, so the failure states are real failures.

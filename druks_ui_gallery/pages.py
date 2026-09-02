@@ -14,32 +14,46 @@ WORKING = {
 async def overview():
     return ui.Page(
         "Druks UI",
-        description="Every screen here is Python. This app ships no JavaScript.",
+        description="Explore the app patterns, live behavior, and complete public catalog.",
         blocks=[
             ui.Markdown(
                 "An app declares typed `Page` objects in `pages.py`. The shared "
                 "dashboard renders them, resolves navigation and actions, and "
                 "refreshes the regions that follow a subject."
             ),
-            ui.Divider(),
-            ui.Card(
-                title="The live gate",
-                description="A durable run stops for a person, and the page shows it.",
-                blocks=[
-                    ui.Text(
-                        "Start the run, watch it park, answer it, and watch the "
-                        "controls go away on their own."
-                    )
+            ui.Cards(
+                title="Start by task",
+                cards=[
+                    ui.Card(
+                        title="Try live behavior",
+                        description="A durable run stops for a person, and the page updates.",
+                        blocks=[
+                            ui.Text(
+                                "Start the run, watch it park, answer it, and watch the "
+                                "controls go away."
+                            )
+                        ],
+                        controls=[
+                            ui.Link(
+                                "Open the live gate",
+                                page="example",
+                                arguments={"example_id": "gate"},
+                            )
+                        ],
+                    ),
+                    ui.Card(
+                        title="Browse working examples",
+                        description="Small, complete flows that run for real.",
+                        blocks=[ui.Text("Use these to learn how pages and actions fit together.")],
+                        controls=[ui.Link("Open examples", page="examples")],
+                    ),
+                    ui.Card(
+                        title="Inspect the full catalog",
+                        description="Every block, value, field, and public variant.",
+                        blocks=[ui.Text("Each page ends with the Python that produced it.")],
+                        controls=[ui.Link("Open the catalog", page="blocks")],
+                    ),
                 ],
-                actions=[
-                    ui.Link("Open the example", page="example", arguments={"example_id": "gate"})
-                ],
-            ),
-            ui.Card(
-                title="The whole catalog",
-                description="Every block, value, and field the contract carries.",
-                blocks=[ui.Text("Each page ends with the Python that produced it.")],
-                actions=[ui.Link("Open the catalog", page="blocks")],
             ),
         ],
     )
@@ -122,9 +136,10 @@ async def example(example_id: str):
 
     if status.gate:
         decision = [ui.GateControls(status.run)]
+        decision_controls = []
     elif status.run and status.state in WORKING:
-        decision = [
-            ui.Text(WORKING[status.state]),
+        decision = [ui.Text(WORKING[status.state])]
+        decision_controls = [
             ui.Action(
                 label="Stop it",
                 operation="stop_example",
@@ -132,18 +147,18 @@ async def example(example_id: str):
                 tone="danger",
                 confirm="Stop this run?",
                 refresh="region",
-            ),
+            )
         ]
     else:
-        decision = [
-            ui.Text("Nothing is waiting on you. Start a run and it will stop here."),
+        decision = [ui.Text("Nothing is waiting on you. Start a run and it will stop here.")]
+        decision_controls = [
             ui.Action(
                 label="Run the example",
                 operation="run_example",
                 arguments={"example_id": example_id},
                 tone="primary",
                 refresh="region",
-            ),
+            )
         ]
 
     return ui.Page(
@@ -156,6 +171,7 @@ async def example(example_id: str):
                 # The whole trick: this region watches the showcase, so every
                 # change to its run rereads the page and replaces the region.
                 follows=found,
+                controls=decision_controls,
                 blocks=decision,
             ),
             ui.Divider(),

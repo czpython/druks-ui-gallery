@@ -1,8 +1,11 @@
+from datetime import UTC, datetime
 from importlib.metadata import entry_points
 
 import pytest
+from druks.testing import seed_run
 
 from druks_ui_gallery.app import DruksUiGallery
+from druks_ui_gallery.catalog.pages import forms
 from druks_ui_gallery.pages import example, overview
 from druks_ui_gallery.workflows import EXAMPLES, Example, RunTheGate
 
@@ -50,13 +53,31 @@ def test_every_action_names_an_operation_the_app_declares():
 async def test_the_landing_page_links_to_the_example(druks_db):
     page = await overview.function()
 
+    (destinations,) = [block for block in page.blocks if block.block == "cards"]
     (opening,) = [
-        action
-        for block in page.blocks
-        for action in getattr(block, "actions", [])
-        if action.page == "example"
+        control
+        for card in destinations.cards
+        for control in card.controls
+        if control.page == "example"
     ]
     assert opening.arguments == {"example_id": "gate"}
+
+
+async def test_the_forms_catalog_shows_inline_and_action_field_collection():
+    page = await forms.function()
+
+    (inline,) = [block for block in page.blocks if block.block == "form"]
+    (results,) = [
+        block for block in page.blocks if block.block == "section" and block.name == "results"
+    ]
+    (field_action,) = page.controls
+
+    assert inline.title == "Every field"
+    assert field_action
+    assert field_action.label == "Try the validation error"
+    assert [field.name for field in field_action.fields] == ["peer"]
+    (result_action,) = results.controls
+    assert result_action.refresh == "region"
 
 
 async def test_the_example_page_offers_a_run_when_nothing_waits(druks_db):
@@ -66,19 +87,17 @@ async def test_the_example_page_offers_a_run_when_nothing_waits(druks_db):
     assert region.name == "decision"
     assert region.follows.subject_type == "example"
     assert region.follows.subject_id == "gate"
-    assert region.blocks[-1].operation == "run_example"
+    assert [control.operation for control in region.controls] == ["run_example"]
 
 
 async def test_a_queued_run_reads_as_queued_and_can_be_stopped(druks_db):
-    from druks.testing import seed_run
-
     await seed_run(druks_db, kind=RunTheGate.kind, subject=Example(id="gate"), state="scheduled")
 
     page = await example.function("gate")
 
     region = page.blocks[0]
     assert "queued" in region.blocks[0].text
-    assert region.blocks[1].operation == "stop_example"
+    assert [control.operation for control in region.controls] == ["stop_example"]
 
 
 async def test_a_parked_run_puts_the_gate_in_the_followed_region(druks_db, parked_run):
@@ -102,10 +121,6 @@ async def test_the_showcase_is_identity_alone():
 
 @pytest.fixture
 async def parked_run(druks_db):
-    from datetime import UTC, datetime
-
-    from druks.testing import seed_run
-
     run = await seed_run(
         druks_db,
         kind=RunTheGate.kind,
