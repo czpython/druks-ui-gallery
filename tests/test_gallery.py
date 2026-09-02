@@ -66,13 +66,17 @@ async def test_the_landing_page_links_to_the_example(druks_db):
 async def test_the_forms_catalog_shows_inline_and_action_field_collection():
     page = await forms.function()
 
-    (inline,) = [block for block in page.blocks if block.block == "form"]
+    empty, filled = [block for block in page.blocks if block.block == "form"]
     (results,) = [
         block for block in page.blocks if block.block == "section" and block.name == "results"
     ]
     (field_action,) = page.controls
 
-    assert inline.title == "Every field"
+    assert empty.title == "Every field"
+    # The other half of what a field can do: a page that offers something to
+    # edit sends the current value back with it.
+    assert filled.title == "A form that starts filled in"
+    assert all(field.is_required for field in filled.fields)
     assert field_action
     assert field_action.label == "Try the validation error"
     assert [field.name for field in field_action.fields] == ["peer"]

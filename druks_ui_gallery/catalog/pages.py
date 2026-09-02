@@ -53,6 +53,15 @@ async def blocks():
                 description="An empty state stands in for content there is none of.",
                 controls=[ui.Link("Read the contract", url="https://docs.druks.ai")],
             ),
+            ui.Cards(
+                title="The same set, with nothing in it",
+                cards=[],
+                empty=ui.EmptyState(
+                    "No peers yet",
+                    description="A set of cards says this itself when it holds none.",
+                    controls=[ui.Link("Add a peer", page="forms")],
+                ),
+            ),
             ui.Link("A link to another page", page="data"),
             declaration(blocks),
         ],
@@ -69,7 +78,11 @@ async def data():
                 ui.NumberValue(number * 3, unit="ms"),
                 DONE if number % 3 else WAITING,
                 ui.TimeValue(STARTED + timedelta(minutes=number)),
-            ]
+            ],
+            # The one thing a row folds away. The rows that answered say all
+            # they have to say in their cells, so only the waiting ones carry
+            # a sentence.
+            detail="" if number % 3 else "No answer inside the 2s window. The sweep moved on.",
         )
         for number in range(1, 26)
     ]
@@ -101,7 +114,10 @@ async def data():
             ),
             ui.Facts(
                 [
-                    ui.Fact("Text", value=ui.TextValue("rack-1")),
+                    ui.Fact(
+                        "Text",
+                        value=ui.TextValue("rack-1", description="The first peer to answer."),
+                    ),
                     ui.Fact("Status, plain", value=ui.StatusValue("idle")),
                     ui.Fact(
                         "Text with a link",
@@ -145,6 +161,7 @@ async def data():
                 name="table_rows",
                 blocks=[
                     ui.Table(
+                        title="This sweep",
                         columns=[
                             ui.TableColumn("Peer"),
                             ui.TableColumn("Latency", align="end"),
@@ -314,14 +331,45 @@ async def forms():
                         placeholder="rack-1",
                         help_text="One line of text.",
                     ),
-                    ui.TextAreaField(name="note", label="Note", rows=3),
-                    ui.NumberField(name="budget", label="Budget", minimum=0, maximum=100, step=5),
-                    ui.SelectField(
-                        name="severity", label="Severity", options=SEVERITY, value="low"
+                    ui.TextAreaField(
+                        name="note",
+                        label="Note",
+                        rows=3,
+                        placeholder="What the sweep found.",
+                        help_text="Several lines of text.",
                     ),
-                    ui.MultiSelectField(name="tags", label="Tags", options=SEVERITY),
-                    ui.RadioField(name="decision", label="Decision", options=SEVERITY),
-                    ui.CheckboxField(name="notify", label="Notify the owner"),
+                    ui.NumberField(
+                        name="budget",
+                        label="Budget",
+                        minimum=0,
+                        maximum=100,
+                        step=5,
+                        help_text="A number inside a range.",
+                    ),
+                    ui.SelectField(
+                        name="severity",
+                        label="Severity",
+                        options=SEVERITY,
+                        value="low",
+                        help_text="One option out of a set.",
+                    ),
+                    ui.MultiSelectField(
+                        name="tags",
+                        label="Tags",
+                        options=SEVERITY,
+                        help_text="Any number of options.",
+                    ),
+                    ui.RadioField(
+                        name="decision",
+                        label="Decision",
+                        options=SEVERITY,
+                        help_text="One option, all of them in view.",
+                    ),
+                    ui.CheckboxField(
+                        name="notify",
+                        label="Notify the owner",
+                        help_text="One box, on or off.",
+                    ),
                     ui.UploadField(
                         name="evidence",
                         label="Evidence",
@@ -333,6 +381,59 @@ async def forms():
                         label="Access token",
                         help_text="A secret has no value that a page can read back.",
                     ),
+                ],
+            ),
+            ui.Form(
+                action=ui.Action(label="Save", operation="accept_anything", tone="primary"),
+                title="A form that starts filled in",
+                description=(
+                    "Every field here is required. The ones that can carry a starting "
+                    "value do, which is how an app offers something to edit rather "
+                    "than something to write."
+                ),
+                fields=[
+                    ui.TextField(name="peer", label="Peer", value="rack-1", is_required=True),
+                    ui.TextAreaField(
+                        name="note",
+                        label="Note",
+                        rows=3,
+                        value="Latency doubled after the replica moved.",
+                        is_required=True,
+                    ),
+                    ui.NumberField(
+                        name="budget", label="Budget", value=25, minimum=0, is_required=True
+                    ),
+                    ui.SelectField(
+                        name="severity",
+                        label="Severity",
+                        options=SEVERITY,
+                        value="high",
+                        is_required=True,
+                    ),
+                    ui.MultiSelectField(
+                        name="tags",
+                        label="Tags",
+                        options=SEVERITY,
+                        value=["low", "high"],
+                        is_required=True,
+                    ),
+                    ui.RadioField(
+                        name="decision",
+                        label="Decision",
+                        options=SEVERITY,
+                        value="low",
+                        is_required=True,
+                    ),
+                    ui.CheckboxField(
+                        name="notify", label="Notify the owner", value=True, is_required=True
+                    ),
+                    # Neither of these two can start with a value: nothing the
+                    # server sends puts a file back into a file input, and a
+                    # secret is not readable once it is stored.
+                    ui.UploadField(
+                        name="evidence", label="Evidence", accept=".csv", is_required=True
+                    ),
+                    ui.SecretField(name="token", label="Access token", is_required=True),
                 ],
             ),
             ui.Divider(),
@@ -355,6 +456,9 @@ async def forms():
                             ui.Action(
                                 label="Delete the sweep",
                                 operation="accept_anything",
+                                # What the action already knows. The shell sends
+                                # these whether or not it asks for anything else.
+                                arguments={"sweep_id": 7},
                                 tone="danger",
                                 confirm="Delete this sweep? Nothing is really deleted here.",
                                 refresh="region",
