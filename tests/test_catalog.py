@@ -4,7 +4,7 @@ from typing import Literal, get_args, get_origin
 
 import pytest
 from druks.testing import seed_run
-from druks.ui import Block, Field, Value
+from druks.ui import Block, Field, Page, Value
 from pydantic import BaseModel
 
 from druks_ui_gallery.catalog.pages import data, forms
@@ -20,12 +20,32 @@ VALUES = {member.model_fields["value"].default for member in Value.__args__[0]._
 FIELDS = {member.model_fields["field"].default for member in Field.__args__[0].__args__}
 
 
+# The attributes the gallery cannot show, and why. One that leaves this list
+# needs an example; one that joins it needs a reason. Anything else failing is
+# a hole in the reference.
+WITHOUT_AN_EXAMPLE = [
+    # Files reads records this gallery never makes, so the block renders with
+    # nothing in it and no FileSummary is ever built. The page says so, and
+    # links to the platform's own story where real files are.
+    "FileSummary.contentType",
+    "FileSummary.id",
+    "FileSummary.name",
+    "FileSummary.size",
+    "Files.files",
+    # The showcase follows its subject on a Section, not on the Page: the point
+    # of it is that one region is replaced while the rest of the page stays
+    # put. A page-level follow here would say the opposite.
+    "Page.follows",
+]
+
+
 # Every enumeration the contract offers, found rather than listed: a Literal on
 # any public model reachable from a block, a value, or a field. A variant with
 # no example is a hole in the reference just as much as a block with none.
 def public_models() -> list[type[BaseModel]]:
     found: list[type[BaseModel]] = []
-    queue = [member for union in (Block, Value, Field) for member in union.__args__[0].__args__]
+    queue = [Page]
+    queue += [member for union in (Block, Value, Field) for member in union.__args__[0].__args__]
     while queue:
         model = queue.pop()
         if model in found:
@@ -62,8 +82,9 @@ def variants() -> list[tuple[type[BaseModel], str, set]]:
     discriminators are left out: their own test covers those."""
     found = []
     for model in public_models():
+        discriminator_field, _ = discriminator_of(model)
         for name, info in model.model_fields.items():
-            if name in {"block", "value", "field"}:
+            if name == discriminator_field:
                 continue
             options = literals(info.annotation)
             if options:
@@ -75,25 +96,55 @@ def wire_keys(model: type[BaseModel]) -> set[str]:
     return {info.alias or name for name, info in model.model_fields.items()}
 
 
-def chosen(pages: list[dict], model: type[BaseModel], field: str) -> set:
-    """What the gallery actually rendered for one model's field. A node counts
-    only when it carries that model's own keys, and its discriminator too."""
-    discriminator_field = next(
-        (key for key in ("block", "value", "field") if key in model.model_fields), ""
-    )
-    discriminator = discriminator_field and model.model_fields[discriminator_field].default
+def discriminator_of(model: type[BaseModel]) -> tuple[str, str]:
+    """The key that names this model on the wire, and what it holds. A model can
+    carry a field called ``value`` that holds a datum rather than a name — a
+    Metric, a Fact, an Option — so the Literal is what settles it."""
+    for key in ("block", "value", "field"):
+        info = model.model_fields.get(key)
+        if info is not None and get_origin(info.annotation) is Literal:
+            return key, info.default
+    return "", ""
+
+
+def nodes_of(pages: list[dict], model: type[BaseModel]) -> list[dict]:
+    """Every node the gallery rendered for one model. A node counts only when it
+    carries that model's own keys, and its discriminator too."""
+    discriminator_field, discriminator = discriminator_of(model)
     keys = wire_keys(model)
-    found = set()
+    found = []
     for page in pages:
         for node in every(page):
-            if field not in node:
+            if set(node) != keys:
                 continue
             if discriminator and node.get(discriminator_field) != discriminator:
                 continue
-            if set(node) != keys:
-                continue
-            found.add(node[field])
+            found.append(node)
     return found
+
+
+def chosen(pages: list[dict], model: type[BaseModel], field: str) -> set:
+    """What the gallery actually rendered for one model's field."""
+    return {node[field] for node in nodes_of(pages, model)}
+
+
+def default_for(model: type[BaseModel], field: str) -> object:
+    """What the wire carries when the app leaves a field alone. A field that
+    renders its default everywhere has no example, however it serializes —
+    ``minimum=0`` is set, and an empty string is not."""
+    (info,) = [one for name, one in model.model_fields.items() if (one.alias or name) == field]
+    return info.get_default(call_default_factory=True)
+
+
+def settable(model: type[BaseModel]) -> list[str]:
+    """Every wire key an app writes on a model. The discriminator is left out:
+    it is the model's name on the wire, not something an app sets."""
+    discriminator_field, _ = discriminator_of(model)
+    return [
+        info.alias or name
+        for name, info in model.model_fields.items()
+        if name != discriminator_field
+    ]
 
 
 def every(node) -> list[dict]:
@@ -163,6 +214,23 @@ async def test_every_field_has_an_example(druks_db, parked):
     shown = set().union(*(named(page, "field") for page in await rendered(druks_db)))
 
     assert FIELDS - shown == set(), "these fields have no gallery example"
+
+
+async def test_every_attribute_has_an_example(druks_db, parked):
+    """Every attribute a model carries, not just every model. The tests above
+    catch a whole new block, value, or field; this catches a new attribute on
+    one that is already here, which is how most of the contract grows —
+    ``Action.fields`` and ``Page.controls`` both arrived that way."""
+    pages = await rendered(druks_db)
+
+    missing = sorted(
+        f"{model.__name__}.{field}"
+        for model in public_models()
+        for field in settable(model)
+        if not any(node[field] != default_for(model, field) for node in nodes_of(pages, model))
+    )
+
+    assert missing == WITHOUT_AN_EXAMPLE, "these attributes have no gallery example"
 
 
 @pytest.mark.parametrize(
