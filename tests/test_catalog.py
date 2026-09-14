@@ -296,6 +296,16 @@ async def test_a_table_shows_both_its_states(druks_db):
     assert len(tables[0]["rows"]) > 20, "no long-content example"
 
 
+async def test_a_filter_narrows_the_table(druks_db):
+    page = (await data.function(state="waiting")).model_dump(by_alias=True, mode="json")
+
+    rows = [one for one in every(page) if one.get("block") == "table"][0]["rows"]
+    assert 0 < len(rows) < 25
+    assert {row["cells"][2]["label"] for row in rows} == {"waiting"}
+    (state,) = page["filters"]
+    assert state["value"] == "waiting", "the filter does not show what it narrowed to"
+
+
 async def test_the_parked_example_shows_the_gate(druks_db, parked):
     page = await example.function("gate")
 

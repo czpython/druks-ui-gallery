@@ -39,6 +39,8 @@ def test_the_pages_make_a_route_table():
     assert pages["about"].parent is pages["overview"]
     assert pages["about"].is_static
     assert not pages["example"].is_static
+    # A Dashboard decision about an example opens the example's own page.
+    assert pages["example"].subject is Example
 
 
 def test_every_action_names_an_operation_the_app_declares():
@@ -54,12 +56,7 @@ async def test_the_landing_page_links_to_the_example(druks_db):
     page = await overview.function()
 
     (destinations,) = [block for block in page.blocks if block.block == "cards"]
-    (opening,) = [
-        control
-        for card in destinations.cards
-        for control in card.controls
-        if control.page == "example"
-    ]
+    (opening,) = [card.link for card in destinations.cards if card.link.page == "example"]
     assert opening.arguments == {"example_id": "gate"}
 
 

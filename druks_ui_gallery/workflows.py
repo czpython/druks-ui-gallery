@@ -50,7 +50,9 @@ class RunTheGate(Workflow):
 
     async def run_multistep(self) -> None:
         await self.look()
-        reply = await self.review(
+        # Druks records the request and the validated reply in Activity itself,
+        # so the answer needs no announcement of its own.
+        await self.review(
             questions=[
                 ExampleQuestion(
                     id="scope",
@@ -65,8 +67,6 @@ class RunTheGate(Workflow):
             "parked, and it stays parked until you answer — through a restart, or "
             "for a week.",
         )
-        # Body-level, not a step: an announcement is its own checkpoint.
-        await self.announce("answered", action=reply.action, note=reply.note)
 
     @step
     async def look(self) -> None:

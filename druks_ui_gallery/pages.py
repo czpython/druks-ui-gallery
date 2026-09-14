@@ -33,25 +33,24 @@ async def overview():
                                 "controls go away."
                             )
                         ],
-                        controls=[
-                            ui.Link(
-                                "Open the live gate",
-                                page="example",
-                                arguments={"example_id": "gate"},
-                            )
-                        ],
+                        # No controls, so the whole card is the link.
+                        link=ui.Link(
+                            "Open the live gate",
+                            page="example",
+                            arguments={"example_id": "gate"},
+                        ),
                     ),
                     ui.Card(
                         title="Browse working examples",
                         description="Small, complete flows that run for real.",
                         blocks=[ui.Text("Use these to learn how pages and actions fit together.")],
-                        controls=[ui.Link("Open examples", page="examples")],
+                        link=ui.Link("Open examples", page="examples"),
                     ),
                     ui.Card(
                         title="Inspect the full catalog",
                         description="Every block, value, field, and public variant.",
                         blocks=[ui.Text("Each page ends with the Python that produced it.")],
-                        controls=[ui.Link("Open the catalog", page="blocks")],
+                        link=ui.Link("Open the catalog", page="blocks"),
                     ),
                 ],
             ),
@@ -125,10 +124,11 @@ async def examples():
     )
 
 
-@ui.page("/examples/{example_id}")
+@ui.page("/examples/{example_id}", subject=Example)
 async def example(example_id: str):
     """A parameterized detail page. The shell gives it a link back to the page
-    whose path it extends."""
+    whose path it extends. It is also the subject's decision page, so the
+    Dashboard opens a parked example here rather than on the platform's page."""
     found = await Example.get_for_subject_id(example_id)
     if not found:
         return ui.Page("No such example", blocks=[ui.Text(f"Nothing is named {example_id!r}.")])
