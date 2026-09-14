@@ -15,11 +15,7 @@ The app registers itself when you install it into a Druks environment:
 uv pip install -e /path/to/druks-ui-gallery
 ```
 
-Restart Druks. The gallery appears in the app switcher.
-
-The V1 UI contract is not on PyPI yet, so the gallery takes Druks from `main`
-until the release that carries it. Install it into an environment running that
-Druks, not the published 0.4.0.
+Restart Druks. The gallery appears in the Apps sidebar.
 
 ## See the live gate
 
@@ -38,21 +34,28 @@ example**:
 Nothing on that page is app JavaScript. The region follows the subject through
 the read side every app already has, and the dashboard does the rest.
 
+The parked run also waits on the Dashboard. Its **Review** opens this same page,
+because the page declares itself the decision page for its subject:
+
+```python
+@ui.page("/examples/{example_id}", subject=Example)
+```
+
 The same page shows the other page shapes: a landing page with navigation, a
 static child that renders as a tab, and a parameterized detail page with the
 link back to the page it hangs under.
 
 ## See the whole catalog
 
-**blocks** holds one of everything the contract carries, in four tabs:
+**blocks** holds one of everything the contract carries, in five tabs:
 
 | Tab | What it shows |
 | --- | --- |
-| Display and layout | Text, Markdown, sections, cards, every callout tone, dividers, empty states, links |
-| Data | Metrics, Facts, two charts, a long table and the same table empty, a list, and every value |
+| Display and layout | Text, Markdown, sections, cards and a card's own link, every callout tone, dividers, empty states, links |
+| Data | Metrics, Facts, three charts, a long table with a page filter and the same table empty, a list, and every value |
 | Runs and artifacts | Timeline, all three shapes of Progress, images, a gallery, files, a link to the platform's own story |
-| Layout | Stack and Columns, nested |
-| Forms and actions | Every field, page and section controls, confirmation, refresh, navigation, and errors |
+| Layout | Stack and Columns, nested, and a sidebar |
+| Forms and actions | Every field, forms that save as you edit, drag and drop, page and section controls, confirmation, refresh, navigation, and errors |
 
 Every one of those pages ends with the Python that produced it. Every button
 calls a real route, so the failure states are real failures.
@@ -74,8 +77,7 @@ uses.
 
 ## Supported Druks
 
-This gallery tracks Druks `>=0.4.0` from `main`, until the release that carries
-the V1 UI contract.
+This gallery installs released Druks from PyPI: `druks>=0.5.0`.
 
 - The contract this app consumes:
   [docs/druks-ui.md](https://github.com/czpython/druks/blob/main/docs/druks-ui.md)

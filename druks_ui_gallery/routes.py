@@ -43,6 +43,15 @@ async def needs_a_peer(peer: Annotated[str, Body(embed=True, min_length=1)]) -> 
     return {"peer": peer}
 
 
+@demos.post("/peers/moves", operation_id="move_peer")
+async def move_peer(
+    peer: Annotated[str, Body(embed=True)], state: Annotated[str, Body(embed=True)]
+) -> dict[str, str]:
+    """What a drop calls. The card's drag and the list's arguments arrive as one
+    body, so a card that carries no peer is refused."""
+    return {"peer": peer, "state": state}
+
+
 @demos.post("/broken", operation_id="always_fails")
 async def always_fails() -> dict[str, str]:
     """Refuses, so a page can show what a failure reads like."""

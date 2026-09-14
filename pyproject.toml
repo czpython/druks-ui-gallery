@@ -5,13 +5,7 @@ description = "The visual and compatibility reference for Druks UI."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = ["druks>=0.4.0"]
-
-# Druks UI is not on PyPI yet, so this gallery takes Druks from the branch that
-# carries the contract it consumes. When the release lands, raise the
-# requirement above to that version and delete this block.
-[tool.uv.sources]
-druks = { git = "https://github.com/czpython/druks", branch = "main" }
+dependencies = ["druks>=0.5.0"]
 
 # Installing the distribution is the whole registration: Druks reads this at
 # boot and mounts the app.

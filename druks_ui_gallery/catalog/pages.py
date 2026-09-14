@@ -39,8 +39,14 @@ async def blocks():
                     ui.Card(
                         title="rack-1",
                         description="Last answered 4 minutes ago.",
-                        blocks=[ui.Text("A card holds blocks and offers links.")],
+                        blocks=[
+                            ui.Text(
+                                "A card holds blocks and offers links. Its own link sits on "
+                                "its title here, because it has controls too."
+                            )
+                        ],
                         controls=[ui.Link("Its runs", page="runs")],
+                        link=ui.Link("rack-1", page="data"),
                     ),
                 ],
             ),
@@ -69,26 +75,43 @@ async def blocks():
 
 
 @blocks.child("/data")
-async def data():
-    """Values, and every block that shows them."""
+async def data(state: str = ""):
+    """Values, and every block that shows them. ``state`` has a default, so it
+    is a filter: the shell keeps it in the query string and reads the page again
+    when it changes."""
+    sweep = [(number, DONE if number % 3 else WAITING) for number in range(1, 26)]
     long_sweep = [
         ui.TableRow(
             [
                 ui.TextValue(f"rack-{number}"),
                 ui.NumberValue(number * 3, unit="ms"),
-                DONE if number % 3 else WAITING,
+                status,
                 ui.TimeValue(STARTED + timedelta(minutes=number)),
             ],
             # The one thing a row folds away. The rows that answered say all
             # they have to say in their cells, so only the waiting ones carry
             # a sentence.
-            detail="" if number % 3 else "No answer inside the 2s window. The sweep moved on.",
+            detail="" if status is DONE else "No answer inside the 2s window. The sweep moved on.",
         )
-        for number in range(1, 26)
+        for number, status in sweep
+        # An empty filter means any.
+        if not state or status.label == state
     ]
     return ui.Page(
         "Data",
         description="One value reads the same way wherever it sits.",
+        filters=[
+            ui.SelectField(
+                name="state",
+                label="State",
+                options=[
+                    ui.Option("Any", value=""),
+                    ui.Option("Done", value=DONE.label),
+                    ui.Option("Waiting", value=WAITING.label),
+                ],
+                value=state,
+            )
+        ],
         blocks=[
             ui.Metrics(
                 [
@@ -291,6 +314,18 @@ async def layout():
                             ),
                         ]
                     ),
+                    ui.Columns(
+                        [
+                            ui.Card(
+                                title="Main", blocks=[ui.Text("It takes what the rail leaves.")]
+                            ),
+                            ui.Card(
+                                title="Rail",
+                                blocks=[ui.Text("A sidebar keeps the last column narrow.")],
+                            ),
+                        ],
+                        layout="sidebar",
+                    ),
                 ],
                 gap="large",
             ),
@@ -376,6 +411,12 @@ async def forms():
                         help_text="One file stored by the platform.",
                         accept="image/*,.pdf",
                     ),
+                    ui.MultiUploadField(
+                        name="photos",
+                        label="Photos",
+                        help_text="Several files from one dialog, each stored by the platform.",
+                        accept="image/*",
+                    ),
                     ui.SecretField(
                         name="token",
                         label="Access token",
@@ -427,13 +468,76 @@ async def forms():
                     ui.CheckboxField(
                         name="notify", label="Notify the owner", value=True, is_required=True
                     ),
-                    # Neither of these two can start with a value: nothing the
+                    # None of these three can start with a value: nothing the
                     # server sends puts a file back into a file input, and a
                     # secret is not readable once it is stored.
                     ui.UploadField(
                         name="evidence", label="Evidence", accept=".csv", is_required=True
                     ),
+                    ui.MultiUploadField(name="photos", label="Photos", is_required=True),
                     ui.SecretField(name="token", label="Access token", is_required=True),
+                ],
+            ),
+            ui.Section(
+                title="Forms that save as you edit",
+                blocks=[
+                    ui.Text(
+                        "Neither form has a button. A select sends when it changes, and text "
+                        "sends when it loses focus."
+                    ),
+                    # Nothing is stored, so neither refreshes: a reread would put
+                    # back what you just changed.
+                    ui.Columns(
+                        [
+                            ui.Form(
+                                action=ui.Action(
+                                    label="Save the note",
+                                    operation="accept_anything",
+                                    refresh="none",
+                                ),
+                                submit="change",
+                                layout="prose",
+                                fields=[
+                                    ui.TextField(
+                                        name="title", label="Title", value="Three peers went stale"
+                                    ),
+                                    ui.TextAreaField(
+                                        name="body",
+                                        label="Body",
+                                        rows=6,
+                                        value=(
+                                            "Latency **doubled** after the replica moved.\n\n"
+                                            "- rack-3\n- rack-7\n- rack-12\n"
+                                        ),
+                                        # Formatted in place, and sent back as markdown.
+                                        markdown=True,
+                                    ),
+                                ],
+                            ),
+                            ui.Form(
+                                action=ui.Action(
+                                    label="Save the peer",
+                                    operation="accept_anything",
+                                    refresh="none",
+                                ),
+                                submit="change",
+                                layout="row",
+                                fields=[
+                                    ui.SelectField(
+                                        name="peer",
+                                        label="Peer",
+                                        options=[
+                                            ui.Option("rack-1", value="rack-1", group="Frankfurt"),
+                                            ui.Option("rack-2", value="rack-2", group="Frankfurt"),
+                                            ui.Option("rack-3", value="rack-3", group="Dublin"),
+                                        ],
+                                        value="rack-1",
+                                    )
+                                ],
+                            ),
+                        ],
+                        layout="sidebar",
+                    ),
                 ],
             ),
             ui.Divider(),
@@ -489,6 +593,47 @@ async def forms():
                             ),
                             ui.Link("A link, which calls nothing", page="overview"),
                         ],
+                    ),
+                ],
+            ),
+            ui.Section(
+                title="Drag and drop",
+                name="board",
+                blocks=[
+                    ui.Text(
+                        "Drag a card onto the other list. The drop sends the card's peer and "
+                        "the list's state to a route. Nothing is stored, so the card goes back."
+                    ),
+                    ui.Columns(
+                        [
+                            ui.Cards(
+                                title="Waiting",
+                                layout="stack",
+                                cards=[ui.Card(title="rack-3", drag={"peer": "rack-3"})],
+                                # The drop is the submit, so it collects nothing
+                                # and asks nothing first.
+                                drop=ui.Action(
+                                    label="Move to waiting",
+                                    operation="move_peer",
+                                    arguments={"state": "waiting"},
+                                    refresh="region",
+                                ),
+                            ),
+                            ui.Cards(
+                                title="Done",
+                                layout="stack",
+                                cards=[
+                                    ui.Card(title="rack-1", drag={"peer": "rack-1"}),
+                                    ui.Card(title="rack-2", drag={"peer": "rack-2"}),
+                                ],
+                                drop=ui.Action(
+                                    label="Move to done",
+                                    operation="move_peer",
+                                    arguments={"state": "done"},
+                                    refresh="region",
+                                ),
+                            ),
+                        ]
                     ),
                 ],
             ),
