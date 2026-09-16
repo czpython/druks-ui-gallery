@@ -28,6 +28,11 @@ class Example(Subject):
     """What a gallery run is about. Identity only — Druks needs nothing more,
     and a reference app should not need a table to prove a page renders."""
 
+    @property
+    def title(self) -> str:
+        # The id stays the key. The title is what Activity shows beside it.
+        return EXAMPLES[self.id]
+
     @classmethod
     async def get_for_subject_id(cls, subject_id: str) -> "Example | None":
         if subject_id in EXAMPLES:
@@ -35,7 +40,7 @@ class Example(Subject):
         return
 
     def get_summary(self) -> SubjectSummary:
-        return SubjectSummary(id=self.id, label=EXAMPLES[self.id])
+        return SubjectSummary.model_validate(self)
 
     @classmethod
     async def list_summaries(cls, account_id: str | None) -> list[SubjectSummary]:
