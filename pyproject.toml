@@ -5,7 +5,7 @@ description = "The visual and compatibility reference for Druks UI."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = ["druks>=0.5.0"]
+dependencies = ["druks>=0.6.0"]
 
 # Installing the distribution is the whole registration: Druks reads this at
 # boot and mounts the app.
