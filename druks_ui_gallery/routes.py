@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, HTTPException, status
 
-from druks_ui_gallery.workflows import EXAMPLES, Example, RunTheGate
+from druks_ui_gallery.workflows import Example, RunTheGate
 
 # Every router here mounts under /api/druks_ui_gallery. An Action names one of
 # these by its operation_id; the dashboard resolves it to a method and a URL.
@@ -13,9 +13,9 @@ router = APIRouter(prefix="/examples")
 async def run_example(example_id: str) -> dict[str, str]:
     """Start the example's durable run. The page that follows this showcase
     picks the run up on its next snapshot."""
-    if example_id not in EXAMPLES:
+    if not (example := await Example.get_or_none(example_id)):
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"No example {example_id!r}.")
-    return {"run": await RunTheGate.dispatch(example=Example(id=example_id))}
+    return {"run": await RunTheGate.start(subject=example)}
 
 
 @router.post("/{example_id}/runs/cancelled", operation_id="stop_example")

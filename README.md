@@ -77,7 +77,7 @@ uses.
 
 ## Supported Druks
 
-This gallery installs released Druks from PyPI: `druks>=0.7.0`.
+This gallery installs released Druks from PyPI: `druks>=0.8.0`.
 
 - The contract this app consumes:
   [docs/druks-ui.md](https://github.com/czpython/druks/blob/main/docs/druks-ui.md)

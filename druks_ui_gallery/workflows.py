@@ -34,13 +34,10 @@ class Example(Subject):
         return EXAMPLES[self.id]
 
     @classmethod
-    async def get_for_subject_id(cls, subject_id: str) -> "Example | None":
-        if subject_id in EXAMPLES:
-            return cls(id=subject_id)
+    async def get_or_none(cls, id: str) -> "Example | None":
+        if id in EXAMPLES:
+            return cls(id=id)
         return
-
-    def get_summary(self) -> SubjectSummary:
-        return SubjectSummary.model_validate(self)
 
     @classmethod
     async def list_summaries(cls, account_id: str | None) -> list[SubjectSummary]:
@@ -76,7 +73,3 @@ class RunTheGate(Workflow):
     @step
     async def look(self) -> None:
         """A durable checkpoint before the gate, so the run has history to show."""
-
-    @classmethod
-    async def dispatch(cls, *, example: Example) -> str:
-        return await cls.start(subject=example)
