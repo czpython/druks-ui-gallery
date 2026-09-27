@@ -51,11 +51,11 @@ link back to the page it hangs under.
 
 | Tab | What it shows |
 | --- | --- |
-| Display and layout | Text, Markdown, sections, cards and a card's own link, every callout tone, dividers, empty states, links |
+| Display and layout | Text, Markdown, sections, cards and a card's own link, every callout tone and a callout's next step, dividers, empty states, links |
 | Data | Metrics, Facts, three charts, a long table with a page filter and the same table empty, a list, and every value |
 | Runs and artifacts | Timeline, all three shapes of Progress, images, a gallery, files, a link to the platform's own story |
 | Layout | Stack and Columns, nested, and a sidebar |
-| Forms and actions | Every field, forms that save as you edit, drag and drop, page and section controls, confirmation, refresh, navigation, and errors |
+| Forms and actions | Every field, a form with a second button, forms that save as you edit, a table that acts on the rows you tick, drag and drop, page and section controls, confirmation, refresh, navigation, and errors |
 
 Every one of those pages ends with the Python that produced it. Every button
 calls a real route, so the failure states are real failures.

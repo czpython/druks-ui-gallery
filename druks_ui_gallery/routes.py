@@ -52,6 +52,16 @@ async def move_peer(
     return {"peer": peer, "state": state}
 
 
+@demos.post("/sweeps", operation_id="sweep_again")
+async def sweep_again(
+    peers: Annotated[list[str], Body(embed=True, min_length=1)],
+) -> dict[str, list[str]]:
+    """What asking the missed peers again calls. The ticked rows' keys arrive
+    as one list under the table's ``select``, so a press with nothing ticked is
+    refused. Nothing runs: it answers with the peers it would ask."""
+    return {"peers": peers}
+
+
 @demos.post("/broken", operation_id="always_fails")
 async def always_fails() -> dict[str, str]:
     """Refuses, so a page can show what a failure reads like."""
