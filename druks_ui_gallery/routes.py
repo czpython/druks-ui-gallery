@@ -52,6 +52,15 @@ async def move_peer(
     return {"peer": peer, "state": state}
 
 
+@demos.post("/peers/retirements", operation_id="retire_peers")
+async def retire_peers(
+    peers: Annotated[list[str], Body(embed=True, min_length=1)],
+) -> dict[str, list[str]]:
+    """What a table's selection calls. The ticked rows' keys arrive as one list
+    under the table's ``select``, so a press with nothing ticked is refused."""
+    return {"peers": peers}
+
+
 @demos.post("/broken", operation_id="always_fails")
 async def always_fails() -> dict[str, str]:
     """Refuses, so a page can show what a failure reads like."""

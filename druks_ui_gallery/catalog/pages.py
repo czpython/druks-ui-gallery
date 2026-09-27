@@ -52,8 +52,20 @@ async def blocks():
             ),
             ui.Callout("Something worth knowing.", tone="info", title="Info"),
             ui.Callout("The sweep finished.", tone="success", title="Success"),
-            ui.Callout("Two peers went stale.", tone="warning", title="Warning"),
-            ui.Callout("The provider is unreachable.", tone="danger", title="Danger"),
+            # A callout's controls are the next step it points at: a link to
+            # read more, or an action to try again. This retry really fails.
+            ui.Callout(
+                "Two peers went stale.",
+                tone="warning",
+                title="Warning",
+                controls=[ui.Link("See the sweep", page="data")],
+            ),
+            ui.Callout(
+                "The provider is unreachable.",
+                tone="danger",
+                title="Danger",
+                controls=[ui.Action(label="Try again", operation="always_fails")],
+            ),
             ui.EmptyState(
                 "No peers yet",
                 description="An empty state stands in for content there is none of.",
@@ -148,7 +160,21 @@ async def data(state: str = ""):
                     ),
                     ui.Fact("Number", value=ui.NumberValue(40.5, unit="ms")),
                     ui.Fact("Status", value=WAITING),
+                    ui.Fact(
+                        "Status with a link",
+                        value=ui.StatusValue(
+                            "parked",
+                            tone="warning",
+                            link=ui.Link(
+                                "The live gate", page="example", arguments={"example_id": "gate"}
+                            ),
+                        ),
+                    ),
                     ui.Fact("Time", value=ui.TimeValue(STARTED)),
+                    ui.Fact(
+                        "Controls",
+                        value=ui.ControlsValue([ui.Link("Its runs", page="runs")]),
+                    ),
                 ],
                 title="Every value",
             ),
@@ -357,8 +383,15 @@ async def forms():
         blocks=[
             ui.Form(
                 action=ui.Action(label="Submit", operation="accept_anything", tone="primary"),
+                # A second button that sends the same fields somewhere else.
+                extra_actions=[
+                    ui.Action(label="Send to the broken route", operation="always_fails")
+                ],
                 title="Every field",
-                description="Submit it: the route accepts anything and answers.",
+                description=(
+                    "Submit it: the route accepts anything and answers. The second "
+                    "button sends the same fields to a route that refuses."
+                ),
                 fields=[
                     ui.TextField(
                         name="peer",
@@ -592,6 +625,57 @@ async def forms():
                                 refresh="page",
                             ),
                             ui.Link("A link, which calls nothing", page="overview"),
+                        ],
+                    ),
+                ],
+            ),
+            ui.Section(
+                title="Acting on rows",
+                name="stale_peers",
+                blocks=[
+                    ui.Text(
+                        "Tick rows and retire them together, or retire one from its own row. "
+                        "The route answers with the peers it got. Nothing is stored, so the "
+                        "rows stay."
+                    ),
+                    ui.Table(
+                        title="Stale peers",
+                        columns=[
+                            ui.TableColumn("Peer"),
+                            ui.TableColumn("State"),
+                            ui.TableColumn("Actions"),
+                        ],
+                        rows=[
+                            ui.TableRow(
+                                [
+                                    ui.TextValue(peer),
+                                    WAITING,
+                                    ui.ControlsValue(
+                                        [
+                                            ui.Action(
+                                                label="Retire",
+                                                operation="retire_peers",
+                                                arguments={"peers": [peer]},
+                                                refresh="region",
+                                            )
+                                        ]
+                                    ),
+                                ],
+                                # What the shell sends for this row when it is ticked.
+                                key=peer,
+                            )
+                            for peer in PEERS
+                        ],
+                        # The ticked keys arrive as one list under this name.
+                        select="peers",
+                        actions=[
+                            ui.Action(
+                                label="Retire the selected",
+                                operation="retire_peers",
+                                tone="danger",
+                                confirm="Retire these peers? Nothing is really retired here.",
+                                refresh="region",
+                            )
                         ],
                     ),
                 ],
