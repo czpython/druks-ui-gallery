@@ -116,7 +116,7 @@ async def test_an_unknown_example_says_so(druks_db):
 
 
 async def test_the_showcase_is_identity_alone():
-    assert await Example.get_for_subject_id("nowhere") is None
+    assert await Example.get_or_none("nowhere") is None
     assert [summary.id for summary in await Example.list_summaries(None)] == list(EXAMPLES)
 
 
