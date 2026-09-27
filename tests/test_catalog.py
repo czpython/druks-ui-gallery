@@ -7,7 +7,7 @@ from druks.testing import seed_run
 from druks.ui import Block, Field, Page, Value
 from pydantic import BaseModel
 
-from druks_ui_gallery.catalog.pages import data, forms
+from druks_ui_gallery.catalog.pages import forms
 from druks_ui_gallery.catalog.source import HEADING
 from druks_ui_gallery.pages import example
 from druks_ui_gallery.workflows import Example, RunTheGate
@@ -109,13 +109,14 @@ def discriminator_of(model: type[BaseModel]) -> tuple[str, str]:
 
 def nodes_of(pages: list[dict], model: type[BaseModel]) -> list[dict]:
     """Every node the gallery rendered for one model. A node counts only when it
-    carries that model's own keys, and its discriminator too."""
+    carries that model's own keys, and its discriminator too. A block or value
+    about a subject also carries the status Druks reads when it serves the page."""
     discriminator_field, discriminator = discriminator_of(model)
     keys = wire_keys(model)
     found = []
     for page in pages:
         for node in every(page):
-            if set(node) != keys:
+            if set(node) not in (keys, keys | {"status"}):
                 continue
             if discriminator and node.get(discriminator_field) != discriminator:
                 continue
@@ -173,14 +174,19 @@ def named(node, key: str) -> set[str]:
     return set()
 
 
-async def rendered(druks_db) -> list[dict]:
+async def served(druks_client, route: str) -> dict:
+    """A page as the page endpoint serves it, with the status Druks reads for
+    every subject on it."""
+    response = await druks_client.get(f"/api/druks_ui_gallery/pages{route}".rstrip("/"))
+    return response.raise_for_status().json()
+
+
+async def rendered(druks_client) -> list[dict]:
     """Every page this gallery declares, as the wire carries it."""
-    pages = []
-    for declared in installed().pages():
-        arguments = {"example_id": "gate"} if declared.name == "example" else {}
-        page = await declared.function(**arguments)
-        pages.append(page.model_dump(by_alias=True, mode="json"))
-    return pages
+    return [
+        await served(druks_client, declared.route.format(example_id="gate"))
+        for declared in installed().pages()
+    ]
 
 
 @pytest.fixture
@@ -198,30 +204,30 @@ async def parked(druks_db):
     return run
 
 
-async def test_every_block_has_an_example(druks_db, parked):
-    shown = set().union(*(named(page, "block") for page in await rendered(druks_db)))
+async def test_every_block_has_an_example(druks_client, parked):
+    shown = set().union(*(named(page, "block") for page in await rendered(druks_client)))
 
     assert BLOCKS - shown == set(), "these blocks have no gallery example"
 
 
-async def test_every_value_has_an_example(druks_db, parked):
-    shown = set().union(*(named(page, "value") for page in await rendered(druks_db)))
+async def test_every_value_has_an_example(druks_client, parked):
+    shown = set().union(*(named(page, "value") for page in await rendered(druks_client)))
 
     assert VALUES - shown == set(), "these values have no gallery example"
 
 
-async def test_every_field_has_an_example(druks_db, parked):
-    shown = set().union(*(named(page, "field") for page in await rendered(druks_db)))
+async def test_every_field_has_an_example(druks_client, parked):
+    shown = set().union(*(named(page, "field") for page in await rendered(druks_client)))
 
     assert FIELDS - shown == set(), "these fields have no gallery example"
 
 
-async def test_every_attribute_has_an_example(druks_db, parked):
+async def test_every_attribute_has_an_example(druks_client, parked):
     """Every attribute a model carries, not just every model. The tests above
     catch a whole new block, value, or field; this catches a new attribute on
     one that is already here, which is how most of the contract grows —
     ``Action.fields`` and ``Page.controls`` both arrived that way."""
-    pages = await rendered(druks_db)
+    pages = await rendered(druks_client)
 
     missing = sorted(
         f"{model.__name__}.{field}"
@@ -236,18 +242,18 @@ async def test_every_attribute_has_an_example(druks_db, parked):
 @pytest.mark.parametrize(
     "model, field, options", variants(), ids=lambda one: getattr(one, "__name__", str(one))
 )
-async def test_every_variant_has_an_example(druks_db, parked, model, field, options):
-    pages = await rendered(druks_db)
+async def test_every_variant_has_an_example(druks_client, parked, model, field, options):
+    pages = await rendered(druks_client)
 
     missing = options - chosen(pages, model, field)
 
     assert missing == set(), f"{model.__name__}.{field} variants with no example"
 
 
-async def test_every_action_names_an_operation_the_app_declares(druks_db, parked):
+async def test_every_action_names_an_operation_the_app_declares(druks_client, parked):
     operations = installed().operations()
 
-    for page in await rendered(druks_db):
+    for page in await rendered(druks_client):
         for action in actions_in(page):
             assert action["operation"] in operations, action
 
@@ -288,16 +294,16 @@ async def test_an_action_can_be_confirmed_refreshed_and_navigated(druks_db):
     assert [field["name"] for field in validating["fields"]] == ["peer"]
 
 
-async def test_a_table_shows_both_its_states(druks_db):
-    page = (await data.function()).model_dump(by_alias=True, mode="json")
+async def test_a_table_shows_both_its_states(druks_client):
+    page = await served(druks_client, "/blocks/data")
 
     tables = [one for one in every(page) if one.get("block") == "table"]
     assert [bool(table["rows"]) for table in tables] == [True, False]
     assert len(tables[0]["rows"]) > 20, "no long-content example"
 
 
-async def test_a_filter_narrows_the_table(druks_db):
-    page = (await data.function(state="waiting")).model_dump(by_alias=True, mode="json")
+async def test_a_filter_narrows_the_table(druks_client):
+    page = await served(druks_client, "/blocks/data?state=waiting")
 
     rows = [one for one in every(page) if one.get("block") == "table"][0]["rows"]
     assert 0 < len(rows) < 25
@@ -306,7 +312,7 @@ async def test_a_filter_narrows_the_table(druks_db):
     assert state["value"] == "waiting", "the filter does not show what it narrowed to"
 
 
-async def test_the_parked_example_shows_the_gate(druks_db, parked):
+async def test_the_parked_example_shows_the_gate(druks_client, parked):
     page = await example.function("gate")
 
     assert [block.block for block in page.blocks[0].blocks] == ["gate_controls"]

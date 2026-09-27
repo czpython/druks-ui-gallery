@@ -76,9 +76,7 @@ async def about():
                         "Detail pages",
                         value=ui.TextValue(
                             "The gate example",
-                            link=ui.Link(
-                                "The gate example", page="example", arguments={"example_id": "gate"}
-                            ),
+                            link=ui.Link(page="example", arguments={"example_id": "gate"}),
                         ),
                     ),
                     ui.Fact(
@@ -115,7 +113,7 @@ async def examples():
                 [
                     ui.TextValue(
                         label,
-                        link=ui.Link(label, page="example", arguments={"example_id": example}),
+                        link=ui.Link(page="example", arguments={"example_id": example}),
                     )
                     for example, label in EXAMPLES.items()
                 ]
@@ -133,7 +131,7 @@ async def example(example_id: str):
     status = await showcase.get_status()
 
     if status.gate:
-        decision = [ui.GateControls(status.run)]
+        decision = [ui.GateControls(showcase)]
         decision_controls = []
     elif status.run and status.state in WORKING:
         decision = [ui.Text(WORKING[status.state])]
