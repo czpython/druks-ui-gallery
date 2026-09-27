@@ -631,15 +631,15 @@ async def forms():
             ),
             ui.Section(
                 title="Acting on rows",
-                name="stale_peers",
+                name="unanswered",
                 blocks=[
                     ui.Text(
-                        "Tick rows and retire them together, or retire one from its own row. "
-                        "The route answers with the peers it got. Nothing is stored, so the "
-                        "rows stay."
+                        "The sweep moved on without these peers. Tick some and ask them again, "
+                        "or ask one from its own row. The route answers with the peers it would "
+                        "ask. Nothing runs, so they stay waiting."
                     ),
                     ui.Table(
-                        title="Stale peers",
+                        title="No answer this sweep",
                         columns=[
                             ui.TableColumn("Peer"),
                             ui.TableColumn("State"),
@@ -653,8 +653,8 @@ async def forms():
                                     ui.ControlsValue(
                                         [
                                             ui.Action(
-                                                label="Retire",
-                                                operation="retire_peers",
+                                                label="Ask again",
+                                                operation="sweep_again",
                                                 arguments={"peers": [peer]},
                                                 refresh="region",
                                             )
@@ -664,16 +664,16 @@ async def forms():
                                 # What the shell sends for this row when it is ticked.
                                 key=peer,
                             )
-                            for peer in PEERS
+                            # The rows the data page's sweep left waiting.
+                            for peer in ["rack-3", "rack-6", "rack-9"]
                         ],
                         # The ticked keys arrive as one list under this name.
                         select="peers",
                         actions=[
                             ui.Action(
-                                label="Retire the selected",
-                                operation="retire_peers",
-                                tone="danger",
-                                confirm="Retire these peers? Nothing is really retired here.",
+                                label="Ask the selected again",
+                                operation="sweep_again",
+                                tone="primary",
                                 refresh="region",
                             )
                         ],
