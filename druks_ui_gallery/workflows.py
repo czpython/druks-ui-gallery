@@ -28,9 +28,8 @@ class Example(Subject):
     """What a gallery run is about. Identity only — Druks needs nothing more,
     and a reference app should not need a table to prove a page renders."""
 
-    @property
-    def title(self) -> str:
-        # The id stays the key. The title is what Activity shows beside it.
+    def __str__(self) -> str:
+        # What runs, Activity, and the board name it. The id still identifies it.
         return EXAMPLES[self.id]
 
     @classmethod

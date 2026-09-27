@@ -109,15 +109,25 @@ async def test_a_parked_run_puts_the_gate_in_the_followed_region(druks_db, parke
     assert region.blocks[0].run == parked_run.id
 
 
-async def test_an_unknown_example_says_so(druks_db):
-    page = await example.function("nowhere")
+async def test_an_unknown_example_is_missing_everywhere(druks_client):
+    page = await druks_client.get("/api/druks_ui_gallery/pages/examples/nowhere")
+    run = await druks_client.post("/api/druks_ui_gallery/examples/nowhere/runs")
+    stop = await druks_client.post("/api/druks_ui_gallery/examples/nowhere/runs/cancelled")
 
-    assert page.title == "No such example"
+    # Druks answers the missing subject itself: an empty state on the page that
+    # links back to the landing page, and a 404 on each route.
+    (empty,) = page.json()["blocks"]
+    assert empty["block"] == "empty_state"
+    assert [control["page"] for control in empty["controls"]] == ["overview"]
+    assert (run.status_code, stop.status_code) == (404, 404)
 
 
 async def test_the_showcase_is_identity_alone():
+    summaries = await Example.list_summaries(None)
+
     assert await Example.get_or_none("nowhere") is None
-    assert [summary.id for summary in await Example.list_summaries(None)] == list(EXAMPLES)
+    assert [summary.id for summary in summaries] == list(EXAMPLES)
+    assert [summary.key for summary in summaries] == list(EXAMPLES.values())
 
 
 @pytest.fixture

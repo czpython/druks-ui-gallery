@@ -13,15 +13,13 @@ router = APIRouter(prefix="/examples")
 async def run_example(example_id: str) -> dict[str, str]:
     """Start the example's durable run. The page that follows this showcase
     picks the run up on its next snapshot."""
-    if not (example := await Example.get_or_none(example_id)):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No example {example_id!r}.")
-    return {"run": await RunTheGate.start(subject=example)}
+    return {"run": await RunTheGate.start(subject=await Example.get(id=example_id))}
 
 
 @router.post("/{example_id}/runs/cancelled", operation_id="stop_example")
 async def stop_example(example_id: str) -> dict[str, str]:
     """Stop whatever is running, so the example can be run again from the top."""
-    await RunTheGate.cancel(Example(id=example_id))
+    await RunTheGate.cancel(await Example.get(id=example_id))
     return {"result": "stopped"}
 
 
