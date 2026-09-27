@@ -129,7 +129,7 @@ async def example(example_id: str):
     """A parameterized detail page. The shell gives it a link back to the page
     whose path it extends. It is also the subject's decision page, so the
     Dashboard opens a parked example here rather than on the platform's page."""
-    found = await Example.get_for_subject_id(example_id)
+    found = await Example.get_or_none(example_id)
     if not found:
         return ui.Page("No such example", blocks=[ui.Text(f"Nothing is named {example_id!r}.")])
     status = await found.get_status()
