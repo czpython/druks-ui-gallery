@@ -129,10 +129,8 @@ async def example(example_id: str):
     """A parameterized detail page. The shell gives it a link back to the page
     whose path it extends. It is also the subject's decision page, so the
     Dashboard opens a parked example here rather than on the platform's page."""
-    found = await Example.get_or_none(example_id)
-    if not found:
-        return ui.Page("No such example", blocks=[ui.Text(f"Nothing is named {example_id!r}.")])
-    status = await found.get_status()
+    showcase = await Example.get(id=example_id)
+    status = await showcase.get_status()
 
     if status.gate:
         decision = [ui.GateControls(status.run)]
@@ -170,11 +168,11 @@ async def example(example_id: str):
                 name="decision",
                 # The whole trick: this region watches the showcase, so every
                 # change to its run rereads the page and replaces the region.
-                follows=found,
+                follows=showcase,
                 controls=decision_controls,
                 blocks=decision,
             ),
             ui.Divider(),
-            ui.Link("Everything druks did about this example", subject=found),
+            ui.Link("Everything druks did about this example", subject=showcase),
         ],
     )
