@@ -101,12 +101,13 @@ async def test_a_queued_run_reads_as_queued_and_can_be_stopped(druks_db):
     assert [control.operation for control in region.controls] == ["stop_example"]
 
 
-async def test_a_parked_run_puts_the_gate_in_the_followed_region(druks_db, parked_run):
-    page = await example.function("gate")
+async def test_a_parked_run_puts_the_gate_in_the_followed_region(druks_client, parked_run):
+    page = (await druks_client.get("/api/druks_ui_gallery/pages/examples/gate")).json()
 
-    region = page.blocks[0]
-    assert [block.block for block in region.blocks] == ["gate_controls"]
-    assert region.blocks[0].run == parked_run.id
+    # The page names the subject; Druks serves the gate with the run parked on it.
+    (gate,) = page["blocks"][0]["blocks"]
+    assert gate["block"] == "gate_controls"
+    assert gate["status"]["run"] == parked_run.id
 
 
 async def test_an_unknown_example_is_missing_everywhere(druks_client):

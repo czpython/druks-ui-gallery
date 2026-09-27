@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 from druks import ui
 
 from druks_ui_gallery.catalog.source import declaration
+from druks_ui_gallery.workflows import Example
 
 # One made-up sweep, so every page reads as the same agent app rather than as
 # unrelated samples.
@@ -156,7 +157,7 @@ async def data(state: str = ""):
                     ui.Fact("Status, plain", value=ui.StatusValue("idle")),
                     ui.Fact(
                         "Text with a link",
-                        value=ui.TextValue("its runs", link=ui.Link("runs", page="runs")),
+                        value=ui.TextValue("its runs", link=ui.Link(page="runs")),
                     ),
                     ui.Fact("Number", value=ui.NumberValue(40.5, unit="ms")),
                     ui.Fact("Status", value=WAITING),
@@ -165,12 +166,17 @@ async def data(state: str = ""):
                         value=ui.StatusValue(
                             "parked",
                             tone="warning",
-                            link=ui.Link(
-                                "The live gate", page="example", arguments={"example_id": "gate"}
-                            ),
+                            link=ui.Link(page="example", arguments={"example_id": "gate"}),
                         ),
                     ),
                     ui.Fact("Time", value=ui.TimeValue(STARTED)),
+                    ui.Fact("Time, never", value=ui.TimeValue(None, empty="never")),
+                    ui.Fact(
+                        "Where the work stands",
+                        # The live gate's own status: Druks reads it when it
+                        # serves the page, so this value is never made up.
+                        value=ui.SubjectStatus(Example(id="gate"), working="sweeping"),
+                    ),
                     ui.Fact(
                         "Controls",
                         value=ui.ControlsValue([ui.Link("Its runs", page="runs")]),
@@ -218,7 +224,7 @@ async def data(state: str = ""):
                             ui.TableColumn("Answered"),
                         ],
                         rows=long_sweep,
-                        empty_text="No peers yet.",
+                        empty=ui.EmptyState("No peers yet."),
                     )
                 ],
             ),
@@ -229,7 +235,7 @@ async def data(state: str = ""):
                     ui.Table(
                         columns=[ui.TableColumn("Peer"), ui.TableColumn("Latency")],
                         rows=[],
-                        empty_text="No peers answered this sweep.",
+                        empty=ui.EmptyState("No peers answered this sweep."),
                     )
                 ],
             ),
