@@ -303,6 +303,22 @@ async def runs():
                 ],
                 title="A gallery",
             ),
+            ui.Cards(
+                title="Tiles",
+                layout="tiles",
+                cards=[
+                    ui.Card(
+                        title=peer,
+                        blocks=[
+                            ui.Image(
+                                url="https://docs.druks.ai/assets/logo/web/DruksLogo_White.svg",
+                                alternative_text="The Druks wordmark, cropped to the tile.",
+                            )
+                        ],
+                    )
+                    for peer in PEERS
+                ],
+            ),
             ui.Text(
                 "Files reads from records this gallery does not make, so what you "
                 "see is the block with nothing to show. The platform's own story "
@@ -362,6 +378,53 @@ async def layout():
                 gap="large",
             ),
             declaration(layout),
+        ],
+    )
+
+
+@blocks.child("/split")
+async def split(peer: str = PEERS[0]):
+    """Columns ``split`` is the whole page: a list and what it opened. ``peer``
+    is a filter, so picking one keeps it in the URL and reads the page again."""
+    return ui.Page(
+        "Split",
+        description="A list, and the one thing it opened beside it.",
+        filters=[
+            ui.SelectField(
+                name="peer",
+                label="Peer",
+                options=[ui.Option(name, value=name) for name in PEERS],
+                value=peer,
+            )
+        ],
+        blocks=[
+            ui.Columns(
+                [
+                    ui.Cards(
+                        title="Peers",
+                        layout="stack",
+                        cards=[
+                            ui.Card(title=name, description="Open" if name == peer else "")
+                            for name in PEERS
+                        ],
+                    ),
+                    # A split is the page's only block, so the declaration
+                    # closes the pane that was opened.
+                    ui.Stack(
+                        [
+                            ui.Facts(
+                                [
+                                    ui.Fact("Peer", value=ui.TextValue(peer)),
+                                    ui.Fact("Last sweep", value=DONE),
+                                ],
+                                title=peer,
+                            ),
+                            declaration(split),
+                        ]
+                    ),
+                ],
+                layout="split",
+            )
         ],
     )
 

@@ -4,7 +4,7 @@ from typing import Literal, get_args, get_origin
 
 import pytest
 from druks.testing import seed_run
-from druks.ui import Block, Field, Page, Value
+from druks.ui import Block, Field, Markdown, Page, Value
 from pydantic import BaseModel
 
 from druks_ui_gallery.catalog.pages import forms
@@ -274,7 +274,7 @@ async def test_every_catalog_page_shows_its_own_declaration(druks_db):
         if not declared.module.endswith("catalog.pages"):
             continue
         page = await declared.function()
-        (last,) = [block for block in page.blocks if block.block == "markdown"][-1:]
+        (last,) = list(page.iter_parts(Markdown))[-1:]
         assert HEADING in last.text
         assert f"async def {declared.name}(" in last.text
 
