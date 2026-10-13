@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv build --wheel
+      # The wheel is named from the tag, so a build whose version is not the
+      # tag's, or that is not pure Python, fails here and nothing is released.
+      - run: |
+          wheel=druks_ui_gallery-${GITHUB_REF_NAME#v}-py3-none-any.whl
+          cd dist && sha256sum "$wheel" > "$wheel.sha256"
+      - run: gh release create "$GITHUB_REF_NAME" dist/*.whl dist/*.sha256
+        env:
+          GH_TOKEN: ${{ github.token }}
