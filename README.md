@@ -53,8 +53,9 @@ link back to the page it hangs under.
 | --- | --- |
 | Display and layout | Text, Markdown, sections, cards and a card's own link, every callout tone and a callout's next step, dividers, empty states, links |
 | Data | Metrics, Facts, three charts, a long table with a page filter and the same table empty, a list, and every value |
-| Runs and artifacts | Timeline, all three shapes of Progress, images, a gallery, files, a link to the platform's own story |
+| Runs and artifacts | Timeline, all three shapes of Progress, images, a gallery, image tiles, files, a link to the platform's own story |
 | Layout | Stack and Columns, nested, and a sidebar |
+| Split | A list and what it opened, as the whole page |
 | Forms and actions | Every field, a form with a second button, forms that save as you edit, a table that acts on the rows you tick, drag and drop, page and section controls, confirmation, refresh, navigation, and errors |
 
 Every one of those pages ends with the Python that produced it. Every button
